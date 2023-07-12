@@ -1,0 +1,163 @@
+
+trigger:
+- main
+
+variables:
+ - name: 'serviceconnection'
+   value: 'DevOpschallenge-sc'
+
+ - name: 'environment'
+   value: 'dev'
+
+ - name: 'backend_rg'
+   value: 'terraform-backend'
+
+ - name: 'backend_storageaccount'
+   value: 'terraformbackend2023'
+
+ - name: 'backend_container'
+   value: 'terraform'
+
+ - name: 'backendkey_tfstate'
+   value: 'terraform.tfstate'
+
+ - name: 'working_directory'
+   value: '$(System.DefaultWorkingDirectory)'
+
+
+
+pool:
+  vmImage: ubuntu-latest
+
+stages :
+
+  - stage: validate
+    displayName : 'Terraform Validate'
+    jobs:
+    - job: validate
+      continueOnError: false
+      steps:
+      - task: TerraformInstaller@0
+        displayName: 'install'
+        inputs:
+          terraformVersion: 'latest'
+      - task: TerraformTaskV2@2
+        displayName: 'init'
+        inputs:
+          provider: 'azurerm'
+          command: 'init'
+          backendServiceArm: $(serviceconnection)
+          backendAzureRmResourceGroupName: '$(backend_rg)'
+          backendAzureRmStorageAccountName: $(backend_storageaccount)
+          backendAzureRmContainerName: $(backend_container)
+          backendAzureRmKey: $(backendkey_tfstate)
+          workingDirectory: '$(working_directory)'
+      - task: TerraformTaskV2@2
+        displayName: 'validate'
+        inputs:
+          provider: 'azurerm'
+          command: 'validate' 
+
+  - stage: Plan_Apply_dev
+    dependsOn: [validate]
+    condition: succeeded('validate')
+    displayName: Plan_Apply_dev
+    jobs:
+      - deployment: 'Approval_Apply_Stage'
+        displayName: 'Approval gate for this stage'
+        environment: 'dev'
+      - job: plan
+        displayName: 'Terraform_plan_dev'
+        continueOnError: false
+        steps:
+        - task: TerraformInstaller@0
+          displayName: 'install'
+          inputs:
+           terraformVersion: 'latest'
+        - task: TerraformTaskV2@2
+          displayName: init
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: $(serviceconnection)
+            backendAzureRmResourceGroupName: '$(backend_rg)'
+            backendAzureRmStorageAccountName: $(backend_storageaccount)
+            backendAzureRmContainerName: $(backend_container)
+            backendAzureRmKey: $(backendkey_tfstate)
+            workingDirectory: '$(working_directory)'
+        - task: TerraformTaskV2@2
+          displayName: plan
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            commandOptions: '-var-file="config.tfvars" -out main.tfplan'
+            environmentServiceNameAzureRM: $(serviceconnection)
+            workingDirectory: '$(working_directory)'
+
+      - job: waitForValidation
+        displayName: Wait for execution plan validation
+        pool: server
+        timeoutInMinutes: 4320 # job times out in 3 days
+        steps:
+        - task: ManualValidation@0
+          timeoutInMinutes: 1440 # task times out in 1 day
+          inputs:
+            notifyUsers: |
+              sksanjeevkumar489@gmail.com
+            instructions: 'Please validate the build configuration and resume'
+            onTimeout: 'reject'
+      
+# Adding the apply job
+#timeoutInMinutes: 0 is very important else the pipeline job will timeout
+
+      - job: Terraform_apply_dev
+        dependsOn :
+        - plan
+        - waitForValidation
+        condition: |
+          and
+           (
+             eq(dependencies.plan.result, 'Succeeded'),
+             eq(dependencies.waitForValidation.result, 'Succeeded')
+           )
+        timeoutInMinutes: 0
+        steps:
+        - checkout: self
+        - task: TerraformInstaller@0
+          displayName: 'install'
+          inputs:
+            terraformVersion: 'latest'
+        - task: TerraformTaskV2@2
+          displayName: 'init'
+          inputs:
+            provider: 'azurerm'
+            command: 'init'
+            backendServiceArm: $(serviceconnection)
+            backendAzureRmResourceGroupName: '$(backend_rg)'
+            backendAzureRmStorageAccountName: $(backend_storageaccount)
+            backendAzureRmContainerName: $(backend_container)
+            backendAzureRmKey: $(backendkey_tfstate)
+            workingDirectory: '$(working_directory)'
+        - task: Bash@3
+          inputs:
+            targetType: 'inline'
+            script: 'printenv'
+            displayName: printenv
+            
+        - task: TerraformTaskV2@2
+          displayName: 'plan'
+          inputs:
+            provider: 'azurerm'
+            command: 'plan'
+            commandOptions: '-input=false -var-file="config.tfvars"'
+            environmentServiceNameAzureRM: '$(serviceconnection)'
+            workingDirectory: '$(working_directory)'
+
+        - task: TerraformTaskV2@2
+          displayName: 'apply'
+          inputs:
+            provider: 'azurerm'
+            command: 'apply'
+            commandOptions: '-input=false -auto-approve -var-file="config.tfvars"'
+            environmentServiceNameAzureRM: '$(serviceconnection)'
+            workingDirectory: '$(working_directory)'
