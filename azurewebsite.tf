@@ -1,7 +1,7 @@
 #Frontend
 # Create the web app, pass in the App Service Plan ID
 resource "azurerm_linux_web_app" "fe-webapp" {
-  name                  = "DevOpschallenge"
+  name                  = "devopschallenge"
   location              = azurerm_resource_group.rg.location
   resource_group_name   = azurerm_resource_group.rg.name
   service_plan_id       = azurerm_service_plan.fe-asp.id
@@ -17,21 +17,21 @@ resource "azurerm_linux_web_app" "fe-webapp" {
   
   app_settings = {
 
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.fg-appinsights.instrumentation_key
+    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.devops-appinsights.instrumentation_key
     "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "1.0.0"
     "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~2"
   }
 
   
   depends_on = [
-    azurerm_service_plan.fe-asp,azurerm_application_insights.fg-appinsights
+    azurerm_service_plan.fe-asp,azurerm_application_insights.devops-appinsights
   ]
 }
 
 #Backend
 #storage account for functionapp
 resource "azurerm_storage_account" "fn-storageaccount" {
-  name                     = "fgfunctionappsapp2023"
+  name                     = "devopssanjfnapps2023"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
   account_tier             = "Standard"
@@ -39,7 +39,7 @@ resource "azurerm_storage_account" "fn-storageaccount" {
 }
 
 resource "azurerm_linux_function_app" "be-fnapp" {
-  name                = "be-function-app"
+  name                = "be-function7-app"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
@@ -50,7 +50,7 @@ resource "azurerm_linux_function_app" "be-fnapp" {
 
   app_settings = {
 
-    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.fg-appinsights.instrumentation_key
+    "APPINSIGHTS_INSTRUMENTATIONKEY"                  = azurerm_application_insights.devops-appinsights.instrumentation_key
     "APPINSIGHTS_PROFILERFEATURE_VERSION"             = "1.0.0"
     "ApplicationInsightsAgent_EXTENSION_VERSION"      = "~2"
     

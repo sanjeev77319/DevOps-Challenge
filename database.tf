@@ -6,20 +6,19 @@ resource "random_password" "randompassword" {
 }
 
 #Create Key Vault Secret
-resource "azurerm_key_vault_secret" "sqladminpassword" {
-  # checkov:skip=CKV_AZURE_41:Expiration not needed 
+resource "azurerm_key_vault_secret" "sqladminpassword" { 
   name         = "sqladmin"
   value        = random_password.randompassword.result
-  key_vault_id = azurerm_key_vault.DevOps-keyvault.id
+  key_vault_id = azurerm_key_vault.devops-keyvault.id
   content_type = "text/plain"
   depends_on = [
-    azurerm_key_vault.DevOps-keyvault,azurerm_key_vault_access_policy.kv_access_policy_01,azurerm_key_vault_access_policy.kv_access_policy_02,azurerm_key_vault_access_policy.kv_access_policy_03
+    azurerm_key_vault.devops-keyvault,azurerm_key_vault_access_policy.kv_access_policy_01,azurerm_key_vault_access_policy.kv_access_policy_02,azurerm_key_vault_access_policy.kv_access_policy_03
   ]
 }
 
 #Azure sql database
 resource "azurerm_mssql_server" "azuresql" {
-  name                         = "DevOps-sqldb-prod"
+  name                         = "devops-sqldb-prod"
   resource_group_name          = azurerm_resource_group.rg.name
   location                     = azurerm_resource_group.rg.location
   version                      = "12.0"
@@ -27,8 +26,8 @@ resource "azurerm_mssql_server" "azuresql" {
   administrator_login_password = random_password.randompassword.result
 
   azuread_administrator {
-    login_username = "AzureAD Admin"
-    object_id      = "86f50fc0-0d0d-4c26-941d-17dd64ed03a6"
+    login_username = "sksanjeevkumar489_gmail.com"
+    object_id      = "3b1567fe-6a85-46b9-86e3-9c23c12be21d"
   }
 }
 
@@ -43,26 +42,26 @@ resource "azurerm_mssql_virtual_network_rule" "allow-be" {
   ]
 }
 
-resource "azurerm_mssql_database" "DevOps-database" {
-  name           = "DevOps-db"
+resource "azurerm_mssql_database" "devops-database" {
+  name           = "devops-db"
   server_id      = azurerm_mssql_server.azuresql.id
   collation      = "SQL_Latin1_General_CP1_CI_AS"
-  max_size_gb    = 2
+  max_size_gb    = 4
   read_scale     = false
   sku_name       = "S0"
   zone_redundant = false
 
   tags = {
-    Application = "DevOpschallenge"
+    Application = "devopschallenge"
     Env = "Prod"
   }
 }
 
 resource "azurerm_key_vault_secret" "sqldb_cnxn" {
-  name = "DevOpssqldbconstring"
-  value = "Driver={ODBC Driver 18 for SQL Server};Server=tcp:DevOps-sqldb-prod.database.windows.net,1433;Database=DevOps-db;Uid=4adminu$er;Pwd=${random_password.randompassword.result};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
-  key_vault_id = azurerm_key_vault.DevOps-keyvault.id
+  name = "devopssqldbconstring"
+  value = "Driver={ODBC Driver 18 for SQL Server};Server=tcp:devops-sqldb-prod.database.windows.net,1433;Database=devops-db;Uid=4adminu$er;Pwd=${random_password.randompassword.result};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;"
+  key_vault_id = azurerm_key_vault.devops-keyvault.id
   depends_on = [
-    azurerm_mssql_database.DevOps-database,azurerm_key_vault_access_policy.kv_access_policy_01,azurerm_key_vault_access_policy.kv_access_policy_02,azurerm_key_vault_access_policy.kv_access_policy_03
+    azurerm_mssql_database.devops-database,azurerm_key_vault_access_policy.kv_access_policy_01,azurerm_key_vault_access_policy.kv_access_policy_02,azurerm_key_vault_access_policy.kv_access_policy_03
   ]
 }

@@ -2,8 +2,8 @@ data "azurerm_client_config" "current" {}
 
 
 
-resource "azurerm_key_vault" "DevOps-keyvault" {
-  name                        = "DevOpskeyvault2024"
+resource "azurerm_key_vault" "devops-keyvault" {
+  name                        = "devopskeyvault2024"
   location                    = azurerm_resource_group.rg.location
   resource_group_name         = azurerm_resource_group.rg.name
   enabled_for_disk_encryption = true
@@ -17,34 +17,34 @@ resource "azurerm_key_vault" "DevOps-keyvault" {
 
 resource "azurerm_key_vault_access_policy" "kv_access_policy_01" {
   #This policy adds databaseadmin group with below permissions
-  key_vault_id       = azurerm_key_vault.DevOps-keyvault.id
+  key_vault_id       = azurerm_key_vault.devops-keyvault.id
   tenant_id          = data.azurerm_client_config.current.tenant_id
-  object_id          = "86f50fc0-0d0d-4c26-941d-17dd64ed03a6"
+  object_id          = "3b1567fe-6a85-46b9-86e3-9c23c12be21d"
   key_permissions    = ["Get", "List"]
   secret_permissions = ["Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set"]
 
-  depends_on = [azurerm_key_vault.DevOps-keyvault]
+  depends_on = [azurerm_key_vault.devops-keyvault]
 }
 
 resource "azurerm_key_vault_access_policy" "kv_access_policy_02" {
   #This policy adds databaseadmin group with below permissions
-  key_vault_id       = azurerm_key_vault.DevOps-keyvault.id
+  key_vault_id       = azurerm_key_vault.devops-keyvault.id
   tenant_id          = data.azurerm_client_config.current.tenant_id
-  object_id          = "da96d180-3c89-4f4d-b1c3-2c67dec3218c"
+  object_id          = "3b1567fe-6a85-46b9-86e3-9c23c12be21d"
   key_permissions    = ["Get", "List"]
   secret_permissions = ["Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set"]
 
-  depends_on = [azurerm_key_vault.DevOps-keyvault]
+  depends_on = [azurerm_key_vault.devops-keyvault]
 }
 
 
 resource "azurerm_key_vault_access_policy" "kv_access_policy_03" {
   #This policy adds databaseadmin group with below permissions
-  key_vault_id       = azurerm_key_vault.DevOps-keyvault.id
+  key_vault_id       = azurerm_key_vault.devops-keyvault.id
   tenant_id          = data.azurerm_client_config.current.tenant_id
-  object_id          = "ef581861-a1a9-4d40-9fcb-cd6f6b97bf4b"
+  object_id          = "3b1567fe-6a85-46b9-86e3-9c23c12be21d"
   key_permissions    = ["Get", "List"]
   secret_permissions = ["Get", "Backup", "Delete", "List", "Purge", "Recover", "Restore", "Set"]
 
-  depends_on = [azurerm_key_vault.DevOps-keyvault]
+  depends_on = [azurerm_key_vault.devops-keyvault]
 }
